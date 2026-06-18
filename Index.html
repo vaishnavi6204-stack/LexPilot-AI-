@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>LexPilot: Legal Due Diligence for Indian Startups</title>
+<link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<section class="hero">
+  <div class="hero-main">
+    <div class="hero-eyebrow">
+      <div class="hero-dot"></div>
+      Free · No signup · Built for Indian founders
+    </div>
+    <h1>Legal due diligence<br>in <em>45 seconds.</em></h1>
+    <p class="hero-sub">Paste in any contract and we'll tell you, in plain English, what's risky, what's fine, and what a lawyer would actually flag. Every point ties back to real Indian law.</p>
+    <div class="hero-cta">
+      <button class="btn-primary" onclick="document.getElementById('analyzer-section').scrollIntoView({behavior:'smooth'})">Check a contract</button>
+      <button class="btn-ghost" onclick="document.getElementById('how-section').scrollIntoView({behavior:'smooth'})">See how it works →</button>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><div class="stat-n">5</div><div class="stat-l">AI agents</div></div>
+      <div class="stat"><div class="stat-n">₹0</div><div class="stat-l">Cost</div></div>
+      <div class="stat"><div class="stat-n">45s</div><div class="stat-l">Per contract</div></div>
+      <div class="stat"><div class="stat-n">92%</div><div class="stat-l">Accuracy</div></div>
+      <div class="stat"><div class="stat-n">4</div><div class="stat-l">Indian laws</div></div>
+    </div>
+  </div>
+  <div class="scroll-hint">
+    <div class="scroll-line"></div>
+    scroll
+  </div>
+</section>
+
+<hr class="section-rule"/>
+
+<section class="section" id="analyzer-section">
+  <span class="eyebrow">Contract review</span>
+  <h2 class="section-title">What does your contract actually say?</h2>
+
+  <div class="upload-card">
+    <div class="file-pill" id="file-pill">
+      <div class="pill-icon">📄</div>
+      <div class="pill-info">
+        <div class="pill-name" id="pill-name">—</div>
+        <div class="pill-meta" id="pill-meta">—</div>
+      </div>
+      <button class="pill-remove" id="btn-remove">✕</button>
+    </div>
+
+    <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+      <span class="drop-icon">📂</span>
+      <div class="drop-title">Drop your contract here</div>
+      <div class="drop-sub">PDF · DOCX · TXT &nbsp;·&nbsp; Max 5 MB</div>
+      <button class="btn-choose" onclick="event.stopPropagation();document.getElementById('file-input').click()">Choose file</button>
+      <input type="file" id="file-input" accept=".pdf,.docx,.doc,.txt"/>
+    </div>
+
+    <div class="or-row">or paste the text</div>
+    <span class="paste-label">Contract text</span>
+    <textarea id="contract-text" rows="7" placeholder="Paste your NDA, employment contract, term sheet, shareholder agreement, or any other document you've been asked to sign..."></textarea>
+
+    <div class="error-msg" id="error-msg"></div>
+
+    <div class="loading-overlay" id="loading-overlay">
+      <div class="loader-ring"></div>
+      <div class="loading-title">Reading through your contract</div>
+      <div class="loading-sub">This usually takes about 45 seconds</div>
+      <div class="agent-pipeline">
+        <div class="agent-node" id="ag1"><div class="agent-icon-wrap">📄</div><div class="agent-lbl">Parsing text</div></div>
+        <div class="agent-arrow">→</div>
+        <div class="agent-node" id="ag2"><div class="agent-icon-wrap">🔍</div><div class="agent-lbl">Checking laws</div></div>
+        <div class="agent-arrow">→</div>
+        <div class="agent-node" id="ag3"><div class="agent-icon-wrap">⚠️</div><div class="agent-lbl">Flagging risks</div></div>
+        <div class="agent-arrow">→</div>
+        <div class="agent-node" id="ag4"><div class="agent-icon-wrap">✓</div><div class="agent-lbl">Verifying</div></div>
+        <div class="agent-arrow">→</div>
+        <div class="agent-node" id="ag5"><div class="agent-icon-wrap">📊</div><div class="agent-lbl">Building report</div></div>
+      </div>
+    </div>
+
+    <button class="btn-analyze" id="btn-analyze" onclick="runAnalysis()">Review this contract</button>
+  </div>
+
+  <div class="results-wrapper" id="results-wrapper">
+    <div class="score-panel">
+      <div class="score-block">
+        <span class="score-num" id="gauge-num">—</span>
+        <span class="score-denom">out of 100</span>
+      </div>
+      <div class="score-details">
+        <div class="score-verdict" id="score-verdict">—</div>
+        <div class="score-summary" id="score-summary">—</div>
+        <div class="score-tags" id="score-tags"></div>
+      </div>
+      <div class="conf-block">
+        <div class="conf-num" id="conf-val">—</div>
+        <div class="conf-lbl">Confidence</div>
+        <div class="conf-sub">Double-checked</div>
+      </div>
+    </div>
+
+    <div class="clause-group" id="sec-high" style="display:none">
+      <div class="clause-group-header">Needs attention</div>
+      <div id="list-high"></div>
+    </div>
+    <div class="clause-group" id="sec-medium" style="display:none">
+      <div class="clause-group-header">Worth reviewing</div>
+      <div id="list-medium"></div>
+    </div>
+    <div class="clause-group" id="sec-standard" style="display:none">
+      <div class="clause-group-header">Looks standard</div>
+      <div id="list-standard"></div>
+    </div>
+
+    <div class="rec-card" id="rec-card" style="display:none">
+      <div class="rec-title">What to do next</div>
+      <ul class="rec-list" id="rec-list"></ul>
+    </div>
+
+    <div class="action-row">
+      <button class="btn-dl" onclick="downloadReport()">↓ Save report</button>
+      <button class="btn-reset" onclick="resetAll()">Check another contract</button>
+    </div>
+  </div>
+</section>
+
+<hr class="section-rule"/>
+
+<section class="section how-section" id="how-section">
+  <span class="eyebrow">Behind the scenes</span>
+  <h2 class="section-title">What happens when you submit</h2>
+  <div class="pipeline-row">
+    <div class="p-step">
+      <div class="p-num">1</div>
+      <div class="p-lbl">Read</div>
+      <div class="p-sub">We split your contract into individual clauses</div>
+    </div>
+    <div class="p-step">
+      <div class="p-num">2</div>
+      <div class="p-lbl">Match</div>
+      <div class="p-sub">We check each clause against Indian law</div>
+    </div>
+    <div class="p-step">
+      <div class="p-num">3</div>
+      <div class="p-lbl">Flag</div>
+      <div class="p-sub">Anything risky or unusual gets flagged</div>
+    </div>
+    <div class="p-step">
+      <div class="p-num">4</div>
+      <div class="p-lbl">Check</div>
+      <div class="p-sub">A second pass double-checks the findings</div>
+    </div>
+    <div class="p-step">
+      <div class="p-num">5</div>
+      <div class="p-lbl">Report</div>
+      <div class="p-sub">You get a score and a plain-English summary</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  Built by <strong>Team Agentic Avengers</strong> &nbsp;·&nbsp; The Arch: RAG &amp; Agentic AI Hackathon &nbsp;·&nbsp; <strong>LexPilot v1.0</strong>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
