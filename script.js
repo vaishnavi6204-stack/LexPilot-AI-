@@ -1,5 +1,15 @@
 let fileText = '', lastResult = null;
 
+let apiKey = sessionStorage.getItem('lexpilot_key') || '';
+const keyInput = document.getElementById('api-key-input');
+if (keyInput) {
+  keyInput.value = apiKey;
+  keyInput.addEventListener('input', e => {
+    apiKey = e.target.value.trim();
+    sessionStorage.setItem('lexpilot_key', apiKey);
+  });
+}
+
 const fi = document.getElementById('file-input');
 const dz = document.getElementById('drop-zone');
 const fp = document.getElementById('file-pill');
@@ -31,6 +41,7 @@ function fmt(b) {
 async function runAnalysis() {
   const text = fileText || document.getElementById('contract-text').value.trim();
   if (!text) { showErr('Please upload a file or paste your contract text first.'); return; }
+  if (!apiKey) { showErr('Please enter your Claude API key above first.'); return; }
   clearErr();
   setForm(false);
   document.getElementById('loading-overlay').classList.add('show');
@@ -62,7 +73,7 @@ ${text.slice(0, 6000)}`;
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': window.LEXPILOT_KEY || '',
+        'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
         'anthropic-dangerous-direct-browser-access': 'true'
       },
@@ -197,6 +208,4 @@ function setForm(show) {
 }
 
 function showErr(msg) { const e = document.getElementById('error-msg'); e.textContent = msg; e.classList.add('show'); }
-function clearErr() { document.getElementById('error-msg').classList.remove('show'); }
-
-(function() { const p = new URLSearchParams(location.search); if (p.get('key')) window.LEXPILOT_KEY = p.get('key'); })();
+function clearErr() { document.getElementById('error-msg').classList.remove('show'); }cation.search); if (p.get('key')) window.LEXPILOT_KEY = p.get('key'); })();
