@@ -1,15 +1,5 @@
 let fileText = '', lastResult = null;
 
-let apiKey = sessionStorage.getItem('lexpilot_key') || '';
-const keyInput = document.getElementById('api-key-input');
-if (keyInput) {
-  keyInput.value = apiKey;
-  keyInput.addEventListener('input', e => {
-    apiKey = e.target.value.trim();
-    sessionStorage.setItem('lexpilot_key', apiKey);
-  });
-}
-
 const fi = document.getElementById('file-input');
 const dz = document.getElementById('drop-zone');
 const fp = document.getElementById('file-pill');
@@ -41,48 +31,26 @@ function fmt(b) {
 async function runAnalysis() {
   const text = fileText || document.getElementById('contract-text').value.trim();
   if (!text) { showErr('Please upload a file or paste your contract text first.'); return; }
-  if (!apiKey) { showErr('Please enter your Claude API key above first.'); return; }
   clearErr();
   setForm(false);
   document.getElementById('loading-overlay').classList.add('show');
   document.getElementById('results-wrapper').classList.remove('show');
   animateAgents();
 
-  const prompt = `You are LexPilot AI, an expert legal due diligence system for Indian startup law.
-Analyze the contract below and return ONLY valid JSON — no markdown, no code fences, no extra text.
-
-JSON structure:
-{
-  "score": <integer 0-100>,
-  "confidence": "<e.g. 91%>",
-  "verdict": "<5-7 word verdict>",
-  "summary": "<2 sentence plain English summary>",
-  "clauses": [
-    {"name":"<clause name>","risk":"HIGH"|"MEDIUM"|"STANDARD","issue":"<specific issue or why compliant>","law":"<specific Indian statute e.g. Indian Contract Act 1872 §73>"}
-  ],
-  "recommendations": ["<actionable step>"]
-}
-
-Rules: score 0-100, identify 6-12 clauses, cite real Indian laws, 3-6 recommendations. Return ONLY JSON.
-
-CONTRACT:
-${text.slice(0, 6000)}`;
-
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/analyze', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: text.slice(0, 6000) })
     });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error.message);
-    const raw = data.content.map(b => b.text || '').join('');
-    const result = JSON.parse(raw.replace(/```json|```/g, '').trim());
+
+    if (res.status === 429) throw new Error('Daily limit reached for your connection. Please try again tomorrow.');
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}));
+      throw new Error(errBody.error || 'Server error. Please try again.');
+    }
+
+    const result = await res.json();
     lastResult = result;
     await new Promise(r => setTimeout(r, 1200));
     document.getElementById('loading-overlay').classList.remove('show');
@@ -90,7 +58,7 @@ ${text.slice(0, 6000)}`;
   } catch (err) {
     document.getElementById('loading-overlay').classList.remove('show');
     setForm(true);
-    showErr('Something went wrong: ' + (err.message || 'Check your API key and try again.'));
+    showErr('Something went wrong: ' + (err.message || 'Please try again.'));
   }
 }
 
@@ -208,4 +176,4 @@ function setForm(show) {
 }
 
 function showErr(msg) { const e = document.getElementById('error-msg'); e.textContent = msg; e.classList.add('show'); }
-function clearErr() { document.getElementById('error-msg').classList.remove('show'); }cation.search); if (p.get('key')) window.LEXPILOT_KEY = p.get('key'); })();
+function clearErr() { document.getElementById('error-msg').classList.remove('show'); }
